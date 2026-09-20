@@ -1,22 +1,22 @@
 package com.cemiqal.ai.numberrecognition.neuralnetwork;
 
+import com.cemiqal.ai.numberrecognition.neuralnetwork.neuron.*;
 import com.cemiqal.ai.numberrecognition.util.MathUtil;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 public class NeuronNetworkBuilder {
 
-   private final Random random;
+   private final NeuronManager neuronManager;
 
    private int inputNeurons;
    private int[] hiddenLayers;
    private int outputNeurons;
    private String[] outputLabels;
 
-   public NeuronNetworkBuilder(){
-      this.random = new Random();
+   public NeuronNetworkBuilder(NeuronManager neuronManager){
+      this.neuronManager = neuronManager;
    }
 
    public NeuronNetworkBuilder inputLayer(int inputNeurons){
@@ -42,7 +42,7 @@ public class NeuronNetworkBuilder {
    private List<Neuron> createOutputLayer(){
       List<Neuron> output = new ArrayList<>();
       for(int i = 0; i < outputNeurons; i++){
-         output.add(new OutputNeuron(0, i >= outputLabels.length ? "" : outputLabels[i]));
+         output.add(neuronManager.createOutputNeuron(0, 0, i >= outputLabels.length ? "" : outputLabels[i]));
       }
       return output;
    }
@@ -56,7 +56,7 @@ public class NeuronNetworkBuilder {
          for(Neuron neuron : previous){
             connections.add(new Connection(MathUtil.generateWeight(weightLimit), neuron));
          }
-         layer.add(new ConnectedNeuron(0, connections));
+         layer.add(neuronManager.createConnectedNeuron(0, 0, connections));
       }
 
       return layer;

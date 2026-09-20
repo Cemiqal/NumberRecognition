@@ -1,16 +1,19 @@
-package com.cemiqal.ai.numberrecognition.neuralnetwork;
+package com.cemiqal.ai.numberrecognition.neuralnetwork.neuron;
 
 public class Neuron {
 
    private float value;
    private float bias;
+   private final int id;
 
-   public Neuron(float value){
+   protected Neuron(float value, int id){
       this.value = value;
+      this.id = id;
    }
 
-   public Neuron(float value, float bias){
+   protected Neuron(float value, float bias, int id){
       this.value = value;
+      this.id = id;
       this.bias = bias;
    }
 
@@ -28,6 +31,10 @@ public class Neuron {
 
    public void setBias(float bias) {
       this.bias = bias;
+   }
+
+   public int getId(){
+      return id;
    }
 
    @Override

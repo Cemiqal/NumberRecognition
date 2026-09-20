@@ -45,6 +45,8 @@ dependencies {
     }
     implementation("org.kordamp.bootstrapfx:bootstrapfx-core:0.4.0")
 
+    implementation("com.google.code.gson:gson:2.14.0")
+
     testImplementation(platform("org.junit:junit-bom:${junitVersion}"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")

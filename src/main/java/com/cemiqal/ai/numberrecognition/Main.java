@@ -1,6 +1,5 @@
 package com.cemiqal.ai.numberrecognition;
 
-import com.cemiqal.ai.numberrecognition.gui.App;
 import javafx.application.Application;
 
 public class Main {

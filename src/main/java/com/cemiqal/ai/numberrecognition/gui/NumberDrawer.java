@@ -1,5 +1,6 @@
 package com.cemiqal.ai.numberrecognition.gui;
 
+import com.cemiqal.ai.numberrecognition.App;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;

@@ -12,7 +12,7 @@ public class MathUtil {
 
    // Generates a random number from -limit to +limit
    public static float generateWeight(float limit){
-      return (float) ((Math.random() * 2 - 1) / limit);
+      return (float) ((Math.random() * 2 - 1) * limit);
    }
 
    public static float xavierLimit(int inputNeurons, int outputNeurons){

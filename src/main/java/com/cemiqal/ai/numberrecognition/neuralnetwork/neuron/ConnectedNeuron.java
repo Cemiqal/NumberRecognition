@@ -1,4 +1,4 @@
-package com.cemiqal.ai.numberrecognition.neuralnetwork;
+package com.cemiqal.ai.numberrecognition.neuralnetwork.neuron;
 
 import java.util.List;
 
@@ -6,13 +6,13 @@ public class ConnectedNeuron extends Neuron {
 
    private final List<Connection> connections;
 
-   public ConnectedNeuron(float value, List<Connection> connections) {
-      super(value);
+   protected ConnectedNeuron(float value, int id, List<Connection> connections) {
+      super(value, id);
       this.connections = connections;
    }
 
-   public ConnectedNeuron(float value, float bias, List<Connection> connections) {
-      super(value, bias);
+   protected ConnectedNeuron(float value, float bias, int id, List<Connection> connections) {
+      super(value, bias, id);
       this.connections = connections;
    }
 

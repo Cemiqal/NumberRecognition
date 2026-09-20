@@ -5,6 +5,7 @@ import java.io.*;
 public class CSVReader {
 
    private final BufferedReader reader;
+   private int counter = 0;
 
    public CSVReader(File file) {
       try {
@@ -14,7 +15,7 @@ public class CSVReader {
       }
    }
 
-   public Data getNext() {
+   public ImageData getNext() {
       try {
          String[] nums = reader.readLine().split(",");
          int label = Integer.parseInt(nums[0]);
@@ -22,7 +23,8 @@ public class CSVReader {
          for (int i = 1; i < nums.length; i++) {
             pixels[i - 1] = Integer.parseInt(nums[i]);
          }
-         return new Data(label, pixels);
+         counter++;
+         return new ImageData(label, pixels);
       } catch (IOException e) {
          throw new RuntimeException(e);
       }
@@ -30,6 +32,7 @@ public class CSVReader {
 
    public void skipToLine(int line) {
       try {
+         counter = line;
          for (int i = 0; i < line-1; i++) {
             if(reader.readLine() == null){
                return;
@@ -38,6 +41,10 @@ public class CSVReader {
       } catch (IOException e) {
          throw new RuntimeException(e);
       }
+   }
+
+   public int getCurrentLine(){
+      return counter;
    }
 
    public void terminate() {

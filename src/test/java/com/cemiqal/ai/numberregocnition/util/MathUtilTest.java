@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 public class MathUtilTest {
 
    @Test
-   public void sigmoid_negativeToPositiveTen_output(){
+   public void sigmoid_negativeToPositiveTen(){
       for(float i = -10f; i < 11; i++){
          System.out.println("num="+i+" output="+MathUtil.sigmoid(i));
       }

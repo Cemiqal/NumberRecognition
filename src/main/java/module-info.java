@@ -7,4 +7,5 @@ module NumberRecognition.main {
 
    requires java.desktop;
    requires java.sql;
+   requires com.google.gson;
 }

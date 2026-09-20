@@ -1,15 +1,19 @@
 package com.cemiqal.ai.numberrecognition.neuralnetwork;
 
+import com.cemiqal.ai.numberrecognition.neuralnetwork.neuron.*;
 import com.cemiqal.ai.numberrecognition.util.MathUtil;
 
+import java.util.Collections;
 import java.util.List;
 
 public class Network {
 
    private final List<List<Neuron>> layers;
+   private final NeuronManager neuronManager;
 
-   public Network(List<List<Neuron>> layers){
+   public Network(List<List<Neuron>> layers, NeuronManager neuronManager){
       this.layers = layers;
+      this.neuronManager = neuronManager;
    }
 
    public int calculateValue(int[] pixels){
@@ -28,7 +32,6 @@ public class Network {
    }
 
    // TODO:
-   // * create network to file save / load system
    // * make model learn
 
    // Set input neurons to normalized pixel grayscale value
@@ -48,7 +51,7 @@ public class Network {
 
             if(!(neuron instanceof ConnectedNeuron connectedNeuron)) continue;
             for(Connection connection : connectedNeuron.getConnections()){
-               Neuron nextNeuron = connection.getNextNeuron();
+               Neuron nextNeuron = neuronManager.getNeuron(connection.getNeuronId());
                nextNeuron.setValue(neuron.getValue() * connection.getWeight() + nextNeuron.getValue());
             }
          }
@@ -72,5 +75,9 @@ public class Network {
       for(Neuron neuron : layer){
          neuron.setValue(0);
       }
+   }
+
+   public List<List<Neuron>> getLayers(){
+      return Collections.unmodifiableList(layers);
    }
 }
