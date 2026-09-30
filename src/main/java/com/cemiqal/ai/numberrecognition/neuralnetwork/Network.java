@@ -1,10 +1,10 @@
 package com.cemiqal.ai.numberrecognition.neuralnetwork;
 
+import com.cemiqal.ai.numberrecognition.data.ImageData;
 import com.cemiqal.ai.numberrecognition.neuralnetwork.neuron.*;
 import com.cemiqal.ai.numberrecognition.util.MathUtil;
 
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public class Network {
 
@@ -16,17 +16,16 @@ public class Network {
       this.neuronManager = neuronManager;
    }
 
-   public int calculateValue(int[] pixels){
-      updateInputValues(pixels);
-      calculateNewValues();
+   public int calculateValue(ImageData data){
+      updateInputValues(data.pixels());
+      propagateForward();
 
-      OutputNeuron highestOutput = getHighestOutput();
+      OutputNeuron highestOutput = getHighestOutput(String.valueOf(data.label()));
       if(highestOutput == null) {
          throw new IllegalArgumentException("Expected an output neuron in the last network layer");
       }
 
-      // Reset output layer
-      resetLayer(layers.getLast());
+      resetLayers();
 
       return Integer.parseInt(highestOutput.getLabel());
    }
@@ -42,7 +41,7 @@ public class Network {
       }
    }
 
-   private void calculateNewValues(){
+   private void propagateForward(){
       for(int i = 0; i < layers.size(); i++){
          for(Neuron neuron : layers.get(i)){
             if(i != 0){
@@ -58,15 +57,18 @@ public class Network {
       }
    }
 
-   private OutputNeuron getHighestOutput(){
+   private OutputNeuron getHighestOutput(String correct){
       OutputNeuron maxNeuron = null;
+      List<OutputNeuron> outputNeurons = new ArrayList<>();
       for(Neuron neuron : layers.getLast()){
          if(!(neuron instanceof OutputNeuron outputNeuron)) continue;
+         outputNeurons.add(outputNeuron);
          System.out.println("Value="+outputNeuron.getValue()+" Label="+outputNeuron.getLabel());
          if(maxNeuron == null || maxNeuron.getValue() < outputNeuron.getValue()){
             maxNeuron = outputNeuron;
          }
       }
+      System.out.println("Loss="+MathUtil.calculateLoss(outputNeurons, correct));
       return maxNeuron;
    }
 
@@ -74,6 +76,48 @@ public class Network {
    private void resetLayer(List<Neuron> layer){
       for(Neuron neuron : layer){
          neuron.setValue(0);
+      }
+   }
+
+   // Sets every neuron value to 0
+   private void resetLayers(){
+      for(List<Neuron> layer : layers){
+         resetLayer(layer);
+      }
+   }
+
+   public void trainMiniBatch(ImageData[] batch, float learningRate){
+      Map<Connection, Float> weights = new HashMap<>();
+      Map<Neuron, Float> biases = new HashMap<>();
+
+      for(ImageData sample : batch){
+         // Pass forward
+         updateInputValues(sample.pixels());
+         propagateForward();
+
+         // Calculate cost
+         List<OutputNeuron> outputNeurons = new ArrayList<>();
+         for(Neuron neuron : layers.getLast()){
+            if(neuron instanceof OutputNeuron outputNeuron) outputNeurons.add(outputNeuron);
+         }
+         float cost = MathUtil.calculateLoss(outputNeurons, Integer.toString(sample.label()));
+
+         // TODO
+         // Add gradient * learningRate of every neuron and connection to maps
+
+         resetLayers();
+      }
+
+      // Update weights
+      for(Map.Entry<Connection, Float> entry : weights.entrySet()){
+         Connection connection = entry.getKey();
+         connection.setWeight(connection.getWeight() + entry.getValue() / batch.length);
+      }
+
+      // Update biases
+      for(Map.Entry<Neuron, Float> entry : biases.entrySet()){
+         Neuron neuron = entry.getKey();
+         neuron.setBias(neuron.getBias() + entry.getValue() / batch.length);
       }
    }
 

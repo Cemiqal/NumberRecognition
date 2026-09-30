@@ -18,8 +18,7 @@ public class StateManager {
 
    public void calculateNext(){
       currentImageData = csvReader.getNext();
-      estimatedValue = network.calculateValue(currentImageData.pixels());
-      System.out.println(estimatedValue);
+      estimatedValue = network.calculateValue(currentImageData);
    }
 
    public ImageData getCurrentData(){
