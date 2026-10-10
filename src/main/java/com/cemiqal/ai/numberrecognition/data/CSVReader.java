@@ -24,7 +24,7 @@ public class CSVReader {
             pixels[i - 1] = Integer.parseInt(nums[i]);
          }
          counter++;
-         return new ImageData(label, pixels);
+         return new ImageData(String.valueOf(label), pixels);
       } catch (IOException e) {
          throw new RuntimeException(e);
       }

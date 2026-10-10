@@ -19,11 +19,10 @@ public class ControlsManager {
       parent.setPadding(new Insets(10));
    }
 
-   // int value | the number value of the current image
    // int estimatedValue | the estimated value of the current image
-   public void initialize(int value, int estimatedValue){
+   public void initialize(String label, int estimatedValue){
       Label number = new Label("Number= ");
-      numberValue = new Label(Integer.toString(value));
+      numberValue = new Label(label);
       parent.getChildren().add(new HBox(number, numberValue));
 
       Label estimatedNumber = new Label("Estimated Number= ");
@@ -34,10 +33,9 @@ public class ControlsManager {
       parent.getChildren().add(nextButton);
    }
 
-   // int value | the number value of the current image
    // int estimatedValue | the estimated value of the current image
-   public void update(int value, int estimatedValue){
-      numberValue.setText(Integer.toString(value));
+   public void update(String label, int estimatedValue){
+      numberValue.setText(label);
       estimatedNumberValue.setText(Integer.toString(estimatedValue));
    }
 

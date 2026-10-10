@@ -6,7 +6,6 @@ import com.cemiqal.ai.numberrecognition.gui.ControlsManager;
 import com.cemiqal.ai.numberrecognition.gui.NumberDrawer;
 import com.cemiqal.ai.numberrecognition.neuralnetwork.*;
 import com.cemiqal.ai.numberrecognition.neuralnetwork.neuron.Neuron;
-import com.cemiqal.ai.numberrecognition.neuralnetwork.neuron.NeuronManager;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.layout.VBox;
@@ -23,6 +22,8 @@ public class App extends Application {
 
    public static final Logger LOGGER = Logger.getLogger("NumberRecognition");
    public static final int IMAGE_SIZE = 28;
+
+   private static final float LEARNING_RATE = 0.01F;
 
    private static final Path NETWORK_PATH = Path.of("network.json");
    private static final Path CSV_STATE_PATH = Path.of("csvReaderState.txt");
@@ -48,12 +49,25 @@ public class App extends Application {
       stateManager.calculateNext();
 
       initGui(stage);
+
+      // Test learning TEMPORARY
+      // TODO abstract
+      /*int batchSize = 32;
+      int iterations = 1870;
+      for(int iteration = 0; iteration < iterations; iteration++){
+         ImageData[] batch = new ImageData[batchSize];
+         for(int image = 0; image < batchSize; image++){
+            batch[image] = csvReader.getNext();
+         }
+         network.trainMiniBatch(batch);
+      }*/
    }
 
    @Override
    public void stop() throws IOException {
       // Save line of csv reader
-      Files.writeString(CSV_STATE_PATH, Integer.toString(csvReader.getCurrentLine()));
+      // TODO save line
+      //Files.writeString(CSV_STATE_PATH, Integer.toString(csvReader.getCurrentLine()));
       csvReader.terminate();
 
       // Save network in json
@@ -61,12 +75,11 @@ public class App extends Application {
    }
 
    private void initNetwork(){
-      NeuronManager neuronManager = new NeuronManager();
-      this.networkSerializer = new NetworkSerializer(NETWORK_PATH, neuronManager);
+      this.networkSerializer = new NetworkSerializer(NETWORK_PATH);
 
       List<List<Neuron>> layers;
       if(networkSerializer.isBlank()) {
-         layers = new NeuronNetworkBuilder(neuronManager)
+         layers = new NeuronNetworkBuilder()
                  .inputLayer(IMAGE_SIZE * IMAGE_SIZE)
                  .hiddenLayers(16, 16)
                  .outputLayer(10)
@@ -76,7 +89,7 @@ public class App extends Application {
          layers = networkSerializer.deserialize();
       }
 
-      this.network = new Network(layers, neuronManager);
+      this.network = new Network(layers, LEARNING_RATE);
    }
 
    private void initGui(Stage stage){

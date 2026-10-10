@@ -1,16 +1,16 @@
 package com.cemiqal.ai.numberrecognition.neuralnetwork.neuron;
 
-public class OutputNeuron extends Neuron {
+public class OutputNeuron extends ConnectedNeuron {
 
    private final String label;
 
-   protected OutputNeuron(float value, int id, String label) {
-      super(value, id);
+   public OutputNeuron(float value, float[] incomingWeights, String label) {
+      super(value, incomingWeights);
       this.label = label;
    }
 
-   protected OutputNeuron(float value, float bias, int id, String label) {
-      super(value, bias, id);
+   public OutputNeuron(float value, float[] incomingWeights, float bias, String label) {
+      super(value, bias, incomingWeights);
       this.label = label;
    }
 

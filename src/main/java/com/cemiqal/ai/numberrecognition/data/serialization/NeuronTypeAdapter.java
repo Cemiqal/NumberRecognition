@@ -1,7 +1,6 @@
 package com.cemiqal.ai.numberrecognition.data.serialization;
 
 import com.cemiqal.ai.numberrecognition.neuralnetwork.neuron.Neuron;
-import com.cemiqal.ai.numberrecognition.neuralnetwork.neuron.NeuronManager;
 import com.google.gson.*;
 
 import java.lang.reflect.Type;
@@ -9,11 +8,9 @@ import java.lang.reflect.Type;
 public class NeuronTypeAdapter implements JsonSerializer<Neuron>, JsonDeserializer<Neuron> {
 
    private final Gson gson;
-   private final NeuronManager neuronManager;
 
-   public NeuronTypeAdapter(NeuronManager neuronManager){
+   public NeuronTypeAdapter(){
       gson = new Gson();
-      this.neuronManager = neuronManager;
    }
 
    @Override
@@ -32,10 +29,7 @@ public class NeuronTypeAdapter implements JsonSerializer<Neuron>, JsonDeserializ
       try {
          Class<? extends Neuron> cls = (Class<? extends Neuron>) Class.forName(typeName);
 
-         Neuron neuron = gson.fromJson(json, cls);
-         neuronManager.registerNeuron(neuron);
-
-         return neuron;
+         return gson.fromJson(json, cls);
       } catch (ClassNotFoundException e) {
          throw new JsonParseException(e);
       }

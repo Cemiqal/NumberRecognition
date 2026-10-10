@@ -14,6 +14,14 @@ public class MathUtil {
       return (float) (1 / (1 + Math.exp(-value)));
    }
 
+   // Value has to be in range of 0-1
+   public static float sigmoidDerivative(float value){
+      if(value > 1 || value < 0){
+         throw new IllegalArgumentException("Value has to be in range of 0-1 (has to be on sigmoid curve)");
+      }
+      return value * (1-value);
+   }
+
    // Generates a random number from -limit to +limit
    public static float generateWeight(float limit){
       return (float) ((Math.random() * 2 - 1) * limit);
@@ -32,6 +40,7 @@ public class MathUtil {
             cost += outputNeuron.getValue() * outputNeuron.getValue();
          }
       }
+      cost /= 2;
       return cost;
    }
 
@@ -41,5 +50,24 @@ public class MathUtil {
          average += value;
       }
       return average / values.length;
+   }
+
+   public static float[] getAverages(float[][] values){
+      if(values == null || values.length == 0){
+         throw new IllegalArgumentException("Cannot get the average of an invalid or empty array");
+      }
+      int n = values[0].length;
+      float[] averages = new float[n];
+
+      for(int i = 0; i < n; i++){
+         int count = 0;
+         float[] v = new float[values.length];
+         for(float[] set : values){
+            v[count++] = set[i];
+         }
+         averages[i] = getAverage(v);
+      }
+
+      return averages;
    }
 }

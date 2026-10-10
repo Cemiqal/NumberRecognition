@@ -9,14 +9,14 @@ import java.util.*;
 public class Network {
 
    private final List<List<Neuron>> layers;
-   private final NeuronManager neuronManager;
+   private final float learningRate;
 
-   public Network(List<List<Neuron>> layers, NeuronManager neuronManager){
+   public Network(List<List<Neuron>> layers, float learningRate){
       this.layers = layers;
-      this.neuronManager = neuronManager;
+      this.learningRate = learningRate;
    }
 
-   public int calculateValue(ImageData data){
+   public int predictValue(ImageData data){
       updateInputValues(data.pixels());
       propagateForward();
 
@@ -31,7 +31,7 @@ public class Network {
    }
 
    // TODO:
-   // * make model learn
+   // * implement backprop
 
    // Set input neurons to normalized pixel grayscale value
    private void updateInputValues(int[] pixels){
@@ -42,18 +42,19 @@ public class Network {
    }
 
    private void propagateForward(){
-      for(int i = 0; i < layers.size(); i++){
-         for(Neuron neuron : layers.get(i)){
-            if(i != 0){
-               neuron.setValue(MathUtil.sigmoid(neuron.getValue() + neuron.getBias()));
-            }
+      float[] input = null;
+      for(List<Neuron> layer : layers){
+         int n = layer.size();
+         float[] current = new float[n];
 
-            if(!(neuron instanceof ConnectedNeuron connectedNeuron)) continue;
-            for(Connection connection : connectedNeuron.getConnections()){
-               Neuron nextNeuron = neuronManager.getNeuron(connection.getNeuronId());
-               nextNeuron.setValue(neuron.getValue() * connection.getWeight() + nextNeuron.getValue());
+         for(int x = 0; x < n; x++){
+            Neuron neuron = layer.get(x);
+            if(neuron instanceof ConnectedNeuron connectedNeuron && input != null) {
+               connectedNeuron.activate(input);
             }
+            current[x] = neuron.getValue();
          }
+         input = current;
       }
    }
 
@@ -86,38 +87,59 @@ public class Network {
       }
    }
 
-   public void trainMiniBatch(ImageData[] batch, float learningRate){
-      Map<Connection, Float> weights = new HashMap<>();
-      Map<Neuron, Float> biases = new HashMap<>();
-
+   public void trainMiniBatch(ImageData[] batch){
+      System.out.println("Training call");
       for(ImageData sample : batch){
          // Pass forward
          updateInputValues(sample.pixels());
          propagateForward();
 
-         // Calculate cost
-         List<OutputNeuron> outputNeurons = new ArrayList<>();
-         for(Neuron neuron : layers.getLast()){
-            if(neuron instanceof OutputNeuron outputNeuron) outputNeurons.add(outputNeuron);
+         // Calculate output neurons delta
+         String label = sample.label();
+         for(Neuron n : layers.getLast()){
+            if(!(n instanceof OutputNeuron neuron)) continue;
+            float expected = neuron.getLabel().equals(label) ? 1f : 0f;
+            float delta = MathUtil.sigmoidDerivative(neuron.getValue()) * (neuron.getValue() - expected);
+            neuron.setDelta(delta);
          }
-         float cost = MathUtil.calculateLoss(outputNeurons, Integer.toString(sample.label()));
 
-         // TODO
-         // Add gradient * learningRate of every neuron and connection to maps
+         // Calculate deltas
+         for(int i = layers.size()-2; i > 0; i--){
+            List<Neuron> layer = layers.get(i);
+            List<Neuron> nextLayer = layers.get(i+1);
 
+            for(int index = 0; index < layer.size(); index++){
+               if(!(layer.get(index) instanceof ConnectedNeuron neuron)) continue;
+               float delta = 0f;
+
+               for(Neuron n1 : nextLayer){
+                  if(!(n1 instanceof ConnectedNeuron next)) continue;
+                  delta += next.getDelta() * next.getWeights()[index];
+               }
+               delta *= MathUtil.sigmoidDerivative(neuron.getValue());
+               neuron.setDelta(delta);
+            }
+         }
+         updateWeights();
          resetLayers();
       }
+   }
 
-      // Update weights
-      for(Map.Entry<Connection, Float> entry : weights.entrySet()){
-         Connection connection = entry.getKey();
-         connection.setWeight(connection.getWeight() + entry.getValue() / batch.length);
-      }
+   private void updateWeights(){
+      for(int i = 1; i < layers.size(); i++){
+         List<Neuron> layer = layers.get(i);
+         List<Neuron> previous = layers.get(i-1);
 
-      // Update biases
-      for(Map.Entry<Neuron, Float> entry : biases.entrySet()){
-         Neuron neuron = entry.getKey();
-         neuron.setBias(neuron.getBias() + entry.getValue() / batch.length);
+         for(Neuron n : layer){
+            if(!(n instanceof ConnectedNeuron neuron)) continue;
+            float[] weights = neuron.getWeights();
+
+            for(int weightIndex = 0; weightIndex < weights.length; weightIndex++){
+               float weightDelta = -learningRate * neuron.getDelta() * previous.get(weightIndex).getValue();
+               neuron.changeWeight(weightIndex, weightDelta);
+            }
+            neuron.setBias(neuron.getBias() + learningRate * neuron.getDelta());
+         }
       }
    }
 

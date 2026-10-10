@@ -8,16 +8,10 @@ import java.util.List;
 
 public class NeuronNetworkBuilder {
 
-   private final NeuronManager neuronManager;
-
    private int inputNeurons;
    private int[] hiddenLayers;
    private int outputNeurons;
    private String[] outputLabels;
-
-   public NeuronNetworkBuilder(NeuronManager neuronManager){
-      this.neuronManager = neuronManager;
-   }
 
    public NeuronNetworkBuilder inputLayer(int inputNeurons){
       this.inputNeurons = inputNeurons;
@@ -39,24 +33,30 @@ public class NeuronNetworkBuilder {
       return this;
    }
 
-   private List<Neuron> createOutputLayer(){
+   private List<Neuron> createInputLayer(){
       List<Neuron> output = new ArrayList<>();
-      for(int i = 0; i < outputNeurons; i++){
-         output.add(neuronManager.createOutputNeuron(0, 0, i >= outputLabels.length ? "" : outputLabels[i]));
+      for(int i = 0; i < inputNeurons; i++){
+         output.add(new Neuron(0));
       }
       return output;
    }
 
-   private List<Neuron> createConnectedLayer(List<Neuron> previous, int neurons){
+   // param boolean isOutput: If true will return a list of OutputNeurons instead of ConnectedNeurons
+   // param int previous: The amount of neurons in the previous layer
+   private List<Neuron> createConnectedLayer(int previous, int neurons, boolean isOutput){
       List<Neuron> layer = new ArrayList<>();
-      float weightLimit = MathUtil.xavierLimit(neurons, previous.size());
+      float weightLimit = MathUtil.xavierLimit(neurons, previous);
 
       for(int i = 0; i < neurons; i++){
-         List<Connection> connections = new ArrayList<>();
-         for(Neuron neuron : previous){
-            connections.add(new Connection(MathUtil.generateWeight(weightLimit), neuron));
+         float[] weights = new float[previous];
+         for(int x = 0; x < weights.length; x++){
+            weights[x] = MathUtil.generateWeight(weightLimit);
          }
-         layer.add(neuronManager.createConnectedNeuron(0, 0, connections));
+         if(isOutput){
+            layer.add(new OutputNeuron(0, weights, i >= outputLabels.length ? "" : outputLabels[i]));
+         } else {
+            layer.add(new ConnectedNeuron(0, weights));
+         }
       }
 
       return layer;
@@ -66,24 +66,22 @@ public class NeuronNetworkBuilder {
    public List<List<Neuron>> build(){
       List<List<Neuron>> layers = new ArrayList<>();
 
-      List<Neuron> outputLayer = createOutputLayer();
-      layers.add(outputLayer);
+      List<Neuron> inputLayer = createInputLayer();
+      layers.add(inputLayer);
 
-      List<Neuron> previous = outputLayer;
-
-      for(int i = hiddenLayers.length-1; i >= 0; i--){
-         List<Neuron> layer = createConnectedLayer(previous, hiddenLayers[i]);
+      int previous = inputLayer.size();
+      for (int hiddenLayer : hiddenLayers) {
+         List<Neuron> layer = createConnectedLayer(previous, hiddenLayer, false);
          layers.add(layer);
-         previous = layer;
+         previous = layer.size();
       }
 
-      List<Neuron> inputLayer = createConnectedLayer(previous, inputNeurons);
-      layers.add(inputLayer);
+      List<Neuron> outputLayer = createConnectedLayer(previous, outputNeurons, true);
+      layers.add(outputLayer);
 
       reset();
 
-      // Reverse so layers.getFirst() = input and layers.getLast() = output
-      return layers.reversed();
+      return layers;
    }
 
    private void reset(){
