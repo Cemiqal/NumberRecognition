@@ -5,6 +5,8 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 
+// TODO remove, class is not needed
+
 public class PictureConverter {
 
    public float[][] getNormGrayscale(File image){

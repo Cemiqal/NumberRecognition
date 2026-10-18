@@ -13,6 +13,7 @@ public class ControlsManager {
    private Label numberValue;
    private Label estimatedNumberValue;
    private Button nextButton;
+   private Button drawButton;
 
    public ControlsManager(){
       parent = new HBox(15);
@@ -21,16 +22,22 @@ public class ControlsManager {
 
    // int estimatedValue | the estimated value of the current image
    public void initialize(String label, int estimatedValue){
+      // Number label
       Label number = new Label("Number= ");
       numberValue = new Label(label);
       parent.getChildren().add(new HBox(number, numberValue));
 
+      // Estimated Number label
       Label estimatedNumber = new Label("Estimated Number= ");
       estimatedNumberValue = new Label(Integer.toString(estimatedValue));
       parent.getChildren().add(new HBox(estimatedNumber, estimatedNumberValue));
 
+      // Buttons
       nextButton = new Button("Next");
       parent.getChildren().add(nextButton);
+
+      drawButton = new Button("Draw");
+      parent.getChildren().add(drawButton);
    }
 
    // int estimatedValue | the estimated value of the current image
@@ -41,6 +48,10 @@ public class ControlsManager {
 
    public Button getNextButton(){
       return nextButton;
+   }
+
+   public Button getDrawButton(){
+      return drawButton;
    }
 
    public Parent getParent(){

@@ -1,13 +1,18 @@
 package com.cemiqal.ai.numberrecognition;
 
 import com.cemiqal.ai.numberrecognition.data.CSVReader;
+import com.cemiqal.ai.numberrecognition.data.ImageData;
+import com.cemiqal.ai.numberrecognition.data.ImageFileWriter;
 import com.cemiqal.ai.numberrecognition.data.serialization.NetworkSerializer;
+import com.cemiqal.ai.numberrecognition.gui.CanvasControls;
 import com.cemiqal.ai.numberrecognition.gui.ControlsManager;
-import com.cemiqal.ai.numberrecognition.gui.NumberDrawer;
+import com.cemiqal.ai.numberrecognition.gui.DrawingCanvas;
+import com.cemiqal.ai.numberrecognition.gui.NumberRenderer;
 import com.cemiqal.ai.numberrecognition.neuralnetwork.*;
 import com.cemiqal.ai.numberrecognition.neuralnetwork.neuron.Neuron;
 import javafx.application.Application;
 import javafx.scene.Scene;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
@@ -23,55 +28,52 @@ public class App extends Application {
    public static final Logger LOGGER = Logger.getLogger("NumberRecognition");
    public static final int IMAGE_SIZE = 28;
 
-   private static final float LEARNING_RATE = 0.01F;
-
    private static final Path NETWORK_PATH = Path.of("network.json");
    private static final Path CSV_STATE_PATH = Path.of("csvReaderState.txt");
 
+   private static final String TESTING_DATA_PATH = "src/main/resources/com/cemiqal/ai/numberrecognition/mnist_test.csv";
    private static final String TRAINING_DATA_PATH = "src/main/resources/com/cemiqal/ai/numberrecognition/mnist_train.csv";
+   private static final String CUSTOM_DATA_PATH = "src/main/resources/com/cemiqal/ai/numberrecognition/custom_train.csv";
 
    private Network network;
    private NetworkSerializer networkSerializer;
-
    private StateManager stateManager;
-   private CSVReader csvReader;
+
+   private CSVReader testReader;
+   private ImageFileWriter imageFileWriter;
 
    @Override
    public void start(Stage stage) throws IOException {
       initNetwork();
 
-      csvReader = new CSVReader(new File(TRAINING_DATA_PATH));
+      CSVReader trainReader = new CSVReader(new File(TRAINING_DATA_PATH));
+      testReader = new CSVReader(new File(TESTING_DATA_PATH));
       if(Files.exists(CSV_STATE_PATH)) {
-         csvReader.skipToLine(Integer.parseInt(Files.readString(CSV_STATE_PATH)));
+         testReader.setLine(Integer.parseInt(Files.readString(CSV_STATE_PATH)));
       }
 
-      this.stateManager = new StateManager(csvReader, network);
+      NetworkTraining networkTraining = new NetworkTraining(network, trainReader, testReader);
+      //networkTraining.train(128, 500);
+
+      LOGGER.info("\nTrain Accuracy: "+Math.round(networkTraining.calculateTrainAccuracy()*10_000)/100f+"%");
+      LOGGER.info("Test Accuracy: "+Math.round(networkTraining.calculateTestAccuracy()*10_000)/100f+"%\n");
+
+      this.stateManager = new StateManager(testReader, network);
       stateManager.calculateNext();
 
+      this.imageFileWriter = new ImageFileWriter(CUSTOM_DATA_PATH);
       initGui(stage);
-
-      // Test learning TEMPORARY
-      // TODO abstract
-      /*int batchSize = 32;
-      int iterations = 1870;
-      for(int iteration = 0; iteration < iterations; iteration++){
-         ImageData[] batch = new ImageData[batchSize];
-         for(int image = 0; image < batchSize; image++){
-            batch[image] = csvReader.getNext();
-         }
-         network.trainMiniBatch(batch);
-      }*/
    }
 
    @Override
    public void stop() throws IOException {
       // Save line of csv reader
-      // TODO save line
-      //Files.writeString(CSV_STATE_PATH, Integer.toString(csvReader.getCurrentLine()));
-      csvReader.terminate();
+      Files.writeString(CSV_STATE_PATH, Integer.toString(testReader.getCurrentLine()));
 
       // Save network in json
       networkSerializer.save(networkSerializer.serialize(network.getLayers()));
+
+      imageFileWriter.close();
    }
 
    private void initNetwork(){
@@ -89,31 +91,63 @@ public class App extends Application {
          layers = networkSerializer.deserialize();
       }
 
-      this.network = new Network(layers, LEARNING_RATE);
+      this.network = new Network(layers, 0.01F);
    }
 
    private void initGui(Stage stage){
-      VBox root = new VBox();
-      root.setSpacing(20);
+      VBox mainRoot = new VBox(10);
+      Scene mainScene = new Scene(mainRoot);
 
-      Scene scene = new Scene(root, 500, 700);
+      VBox drawRoot = new VBox(20);
+      Scene drawScene = new Scene(drawRoot);
+
+      initMain(mainRoot, stage, drawScene);
+      initDraw(drawRoot, stage, mainScene);
+
       stage.setTitle("Number Recognition");
-      stage.setScene(scene);
+      stage.setScene(mainScene);
+      stage.show();
+   }
 
-      NumberDrawer numberDrawer = new NumberDrawer(500);
-      root.getChildren().add(numberDrawer.getCanvas());
-      numberDrawer.drawImage(stateManager.getCurrentData().pixels());
+   private void initMain(Pane root, Stage stage, Scene drawScene){
+      NumberRenderer numberRenderer = new NumberRenderer(500);
+      root.getChildren().add(numberRenderer.getCanvas());
+      numberRenderer.drawImage(stateManager.getCurrentData().pixels());
 
       ControlsManager controlsManager = new ControlsManager();
       controlsManager.initialize(stateManager.getCurrentData().label(), stateManager.getEstimatedValue());
+
       controlsManager.getNextButton().setOnAction(event -> {
          stateManager.calculateNext();
-         numberDrawer.drawImage(stateManager.getCurrentData().pixels());
+         numberRenderer.drawImage(stateManager.getCurrentData().pixels());
          controlsManager.update(stateManager.getCurrentData().label(), stateManager.getEstimatedValue());
       });
+      controlsManager.getDrawButton().setOnAction(event -> stage.setScene(drawScene));
       root.getChildren().add(controlsManager.getParent());
+   }
 
-      stage.show();
+   private void initDraw(Pane root, Stage stage, Scene main){
+      DrawingCanvas drawingCanvas = new DrawingCanvas(504);
+      root.getChildren().add(drawingCanvas.getCanvas());
+      drawingCanvas.reset();
+
+      CanvasControls canvasControls = new CanvasControls();
+      canvasControls.init();
+      canvasControls.setSaveAction(string -> {
+         ImageData data = new ImageData(string, drawingCanvas.getPixels());
+         imageFileWriter.write(data);
+         canvasControls.getResetButton().fire();
+      });
+
+      canvasControls.getEstimateButton().setOnAction(event -> {
+         int estimate = network.predictValue(drawingCanvas.getPixels());
+         canvasControls.updateValue(String.valueOf(estimate));
+      });
+      canvasControls.getResetButton().setOnAction(event -> drawingCanvas.reset());
+      canvasControls.getBackButton().setOnAction(event -> stage.setScene(main));
+
+
+      root.getChildren().add(canvasControls.getParent());
    }
 }
 

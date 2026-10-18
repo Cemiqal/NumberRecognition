@@ -5,16 +5,15 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 
-public class NumberDrawer {
+public class NumberRenderer {
 
    private final Canvas canvas;
    private final GraphicsContext gc;
 
    private final double size;
-
    private final double pixelSize;
 
-   public NumberDrawer(double size){
+   public NumberRenderer(double size){
       this.size = size;
       this.pixelSize = size / App.IMAGE_SIZE;
       canvas = new Canvas(size, size);

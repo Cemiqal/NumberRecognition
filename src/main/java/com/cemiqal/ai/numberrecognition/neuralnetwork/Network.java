@@ -1,5 +1,6 @@
 package com.cemiqal.ai.numberrecognition.neuralnetwork;
 
+import com.cemiqal.ai.numberrecognition.App;
 import com.cemiqal.ai.numberrecognition.data.ImageData;
 import com.cemiqal.ai.numberrecognition.neuralnetwork.neuron.*;
 import com.cemiqal.ai.numberrecognition.util.MathUtil;
@@ -9,29 +10,36 @@ import java.util.*;
 public class Network {
 
    private final List<List<Neuron>> layers;
-   private final float learningRate;
+   private float learningRate;
 
    public Network(List<List<Neuron>> layers, float learningRate){
       this.layers = layers;
       this.learningRate = learningRate;
    }
 
-   public int predictValue(ImageData data){
-      updateInputValues(data.pixels());
+   private int predictValueNoReset(int[] pixels){
+      updateInputValues(pixels);
       propagateForward();
 
-      OutputNeuron highestOutput = getHighestOutput(String.valueOf(data.label()));
+      OutputNeuron highestOutput = getHighestOutput();
       if(highestOutput == null) {
          throw new IllegalArgumentException("Expected an output neuron in the last network layer");
       }
-
-      resetLayers();
-
       return Integer.parseInt(highestOutput.getLabel());
    }
 
-   // TODO:
-   // * implement backprop
+   public int predictValue(int[] pixels){
+      int value = predictValueNoReset(pixels);
+      resetLayers();
+      return value;
+   }
+
+   public int predictValue(ImageData data){
+      int value = predictValueNoReset(data.pixels());
+      App.LOGGER.info("Loss="+calculateLoss(data.label()));
+      resetLayers();
+      return value;
+   }
 
    // Set input neurons to normalized pixel grayscale value
    private void updateInputValues(int[] pixels){
@@ -58,19 +66,25 @@ public class Network {
       }
    }
 
-   private OutputNeuron getHighestOutput(String correct){
+   private OutputNeuron getHighestOutput(){
       OutputNeuron maxNeuron = null;
-      List<OutputNeuron> outputNeurons = new ArrayList<>();
+
       for(Neuron neuron : layers.getLast()){
          if(!(neuron instanceof OutputNeuron outputNeuron)) continue;
-         outputNeurons.add(outputNeuron);
-         System.out.println("Value="+outputNeuron.getValue()+" Label="+outputNeuron.getLabel());
          if(maxNeuron == null || maxNeuron.getValue() < outputNeuron.getValue()){
             maxNeuron = outputNeuron;
          }
       }
-      System.out.println("Loss="+MathUtil.calculateLoss(outputNeurons, correct));
       return maxNeuron;
+   }
+
+   private float calculateLoss(String label){
+      List<OutputNeuron> outputNeurons = new ArrayList<>();
+      for(Neuron neuron : layers.getLast()){
+         if(!(neuron instanceof OutputNeuron outputNeuron)) continue;
+         outputNeurons.add(outputNeuron);
+      }
+      return MathUtil.calculateLoss(outputNeurons, label);
    }
 
    // Sets all the neuron values in layer to 0
@@ -88,7 +102,6 @@ public class Network {
    }
 
    public void trainMiniBatch(ImageData[] batch){
-      System.out.println("Training call");
       for(ImageData sample : batch){
          // Pass forward
          updateInputValues(sample.pixels());
@@ -145,5 +158,9 @@ public class Network {
 
    public List<List<Neuron>> getLayers(){
       return Collections.unmodifiableList(layers);
+   }
+
+   public void setLearningRate(float learningRate){
+      this.learningRate = learningRate;
    }
 }
