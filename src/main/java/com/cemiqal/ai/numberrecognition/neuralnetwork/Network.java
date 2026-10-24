@@ -112,6 +112,7 @@ public class Network {
          for(Neuron n : layers.getLast()){
             if(!(n instanceof OutputNeuron neuron)) continue;
             float expected = neuron.getLabel().equals(label) ? 1f : 0f;
+            //                      Activation Derivative                       Loss Derivative
             float delta = MathUtil.sigmoidDerivative(neuron.getValue()) * (neuron.getValue() - expected);
             neuron.setDelta(delta);
          }

@@ -38,6 +38,7 @@ public class App extends Application {
    private Network network;
    private NetworkSerializer networkSerializer;
    private StateManager stateManager;
+   private static final float STARTING_LEARNING_RATE = 0.001f;
 
    private CSVReader testReader;
    private ImageFileWriter imageFileWriter;
@@ -46,17 +47,19 @@ public class App extends Application {
    public void start(Stage stage) throws IOException {
       initNetwork();
 
-      CSVReader trainReader = new CSVReader(new File(TRAINING_DATA_PATH));
       testReader = new CSVReader(new File(TESTING_DATA_PATH));
       if(Files.exists(CSV_STATE_PATH)) {
          testReader.setLine(Integer.parseInt(Files.readString(CSV_STATE_PATH)));
       }
 
-      NetworkTraining networkTraining = new NetworkTraining(network, trainReader, testReader);
-      //networkTraining.train(128, 500);
+      CSVReader trainReader = new CSVReader(new File(TRAINING_DATA_PATH));
+      CSVReader customReader = new CSVReader(new File(CUSTOM_DATA_PATH));
+      NetworkTraining networkTraining = new NetworkTraining(network, trainReader);
+      //for(int i = 0; i < 50; i++) networkTraining.trainFully();
 
-      LOGGER.info("\nTrain Accuracy: "+Math.round(networkTraining.calculateTrainAccuracy()*10_000)/100f+"%");
-      LOGGER.info("Test Accuracy: "+Math.round(networkTraining.calculateTestAccuracy()*10_000)/100f+"%\n");
+      LOGGER.info("\nTrain Accuracy: "+Math.round(networkTraining.calculateAccuracy(trainReader)*10_000)/100f+"%");
+      LOGGER.info("Test Accuracy: "+Math.round(networkTraining.calculateAccuracy(testReader)*10_000)/100f+"%");
+      LOGGER.info("Custom Data Accuracy: "+Math.round(networkTraining.calculateAccuracy(customReader)*10_000)/100f+"%\n");
 
       this.stateManager = new StateManager(testReader, network);
       stateManager.calculateNext();
@@ -91,7 +94,7 @@ public class App extends Application {
          layers = networkSerializer.deserialize();
       }
 
-      this.network = new Network(layers, 0.01F);
+      this.network = new Network(layers, STARTING_LEARNING_RATE);
    }
 
    private void initGui(Stage stage){

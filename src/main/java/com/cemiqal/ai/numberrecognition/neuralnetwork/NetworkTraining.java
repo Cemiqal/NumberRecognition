@@ -7,12 +7,10 @@ public class NetworkTraining {
 
    private final Network network;
    private final CSVReader trainReader;
-   private final CSVReader testReader;
 
-   public NetworkTraining(Network network, CSVReader trainReader, CSVReader testReader){
+   public NetworkTraining(Network network, CSVReader trainReader){
       this.network = network;
       this.trainReader = trainReader;
-      this.testReader = testReader;
    }
 
    public void train(int batchSize, int iterations){
@@ -25,7 +23,11 @@ public class NetworkTraining {
       }
    }
 
-   private float calculateAccuracy(CSVReader reader){
+   public void trainFully(){
+      train(trainReader.getLength(), 1);
+   }
+
+   public float calculateAccuracy(CSVReader reader){
       reader.setLine(0);
       int size = reader.getLength();
       int count = 0;
@@ -35,13 +37,5 @@ public class NetworkTraining {
          if(value == Integer.parseInt(data.label())) count++;
       }
       return (float) count / size;
-   }
-
-   public float calculateTestAccuracy(){
-      return calculateAccuracy(testReader);
-   }
-
-   public float calculateTrainAccuracy(){
-      return calculateAccuracy(trainReader);
    }
 }
